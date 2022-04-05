@@ -15,12 +15,12 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
 {
-    internal static class ConverterLogicHandler
+    public static class ConverterLogicHandler
     {
         private const string MetadataFileName = "metadata.json";
         private static readonly List<string> CcdaExtensions = new List<string> { ".ccda", ".xml" };
 
-        internal static void Convert(ConverterOptions options)
+        public static void Convert(ConverterOptions options)
         {
             if (!IsValidOptions(options))
             {
@@ -48,12 +48,48 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
             Console.WriteLine($"Conversion completed!");
         }
 
+        public static string ConvertToString(ConverterOptions options)
+        {
+            if (!IsValidOptions(options))
+            {
+                throw new InputParameterException("Invalid command-line options.");
+            }
+
+            var dataType = GetDataTypes(options.TemplateDirectory);
+            var dataProcessor = CreateDataProcessor(dataType);
+            var templateProvider = CreateTemplateProvider(dataType, options.TemplateDirectory);
+
+            if (!string.IsNullOrEmpty(options.InputDataContent))
+            {
+                return ConvertSingleFileToString(dataProcessor, templateProvider, dataType, options.RootTemplate, options.InputDataContent, options.IsTraceInfo);
+            }
+            else if (!string.IsNullOrEmpty(options.InputDataFile))
+            {
+                var fileContent = File.ReadAllText(options.InputDataFile);
+                return ConvertSingleFileToString(dataProcessor, templateProvider, dataType, options.RootTemplate, fileContent, options.IsTraceInfo);
+            }
+            else
+            {
+                //ConvertBatchFiles(dataProcessor, templateProvider, dataType, options.RootTemplate, options.InputDataFolder, options.OutputDataFolder, options.IsTraceInfo);
+                throw new NotImplementedException($"The conversion of multiple files to a FHIR string is not supported");
+            }
+        }
+
         private static void ConvertSingleFile(IFhirConverter dataProcessor, ITemplateProvider templateProvider, DataType dataType, string rootTemplate, string inputContent, string outputFile, bool isTraceInfo)
         {
             var traceInfo = CreateTraceInfo(dataType, isTraceInfo);
             var resultString = dataProcessor.Convert(inputContent, rootTemplate, templateProvider, traceInfo);
             var result = new ConverterResult(ProcessStatus.OK, resultString, traceInfo);
             SaveConverterResult(outputFile, result);
+        }
+
+        private static string ConvertSingleFileToString(IFhirConverter dataProcessor, ITemplateProvider templateProvider, DataType dataType, string rootTemplate, string inputContent, bool isTraceInfo)
+        {
+            var traceInfo = CreateTraceInfo(dataType, isTraceInfo);
+            var resultString = dataProcessor.Convert(inputContent, rootTemplate, templateProvider, traceInfo);
+            var result = new ConverterResult(ProcessStatus.OK, resultString, traceInfo);
+            var content = JsonConvert.SerializeObject(result, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+            return content;
         }
 
         private static void ConvertBatchFiles(IFhirConverter dataProcessor, ITemplateProvider templateProvider, DataType dataType, string rootTemplate, string inputFolder, string outputFolder, bool isTraceInfo)
@@ -162,7 +198,12 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
                                  !string.IsNullOrEmpty(options.OutputDataFolder) &&
                                  !IsSameDirectory(options.InputDataFolder, options.OutputDataFolder);
 
-            return contentToFile || fileToFile || folderToFolder;
+            var contentToString = !string.IsNullOrEmpty(options.InputDataContent) &&
+                                string.IsNullOrEmpty(options.InputDataFile) &&
+                                string.IsNullOrEmpty(options.InputDataFolder) &&
+                                string.IsNullOrEmpty(options.OutputDataFolder);
+
+            return contentToFile || fileToFile || folderToFolder || contentToString;
         }
 
         private static bool IsSameFile(string inputFile, string outputFile)
