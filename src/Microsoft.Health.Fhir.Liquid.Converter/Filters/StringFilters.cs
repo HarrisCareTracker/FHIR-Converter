@@ -13,6 +13,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Health.Fhir.Liquid.Converter.InputProcessors;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Health.Fhir.Liquid.Converter
 {
@@ -59,7 +60,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
 
         public static string ToJsonString(object data)
         {
-            return data == null ? null : JsonConvert.SerializeObject(data, Formatting.None);
+            return data == null ? null : JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.None);
         }
 
         public static string Gzip(string data)
@@ -104,6 +105,21 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
         {
             var bytes = Convert.FromBase64String(data);
             return Encoding.UTF8.GetString(bytes);
+        }
+
+        // Used to parse HTML blurbs from a CCDA and return first element with the supplied ID
+        public static string GetElementValueById(string data, string id)
+        {
+            if (id.StartsWith("#"))
+            {
+                id = id[1..];
+            }
+
+            var jo = JObject.Parse(data);
+            var value = jo.Descendants().OfType<JProperty>().Where(p => p.Name == "ID").Where(p => (string)p.Value == id)
+                .Where(p => p.Next != null)
+                .Select(p => (p.Next as JProperty).Value.ToString()).FirstOrDefault();
+            return value;
         }
     }
 }
