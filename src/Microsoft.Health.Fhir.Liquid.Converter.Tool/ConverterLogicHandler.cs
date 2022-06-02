@@ -19,6 +19,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
     {
         private const string MetadataFileName = "metadata.json";
         private static readonly List<string> CcdaExtensions = new List<string> { ".ccda", ".xml" };
+        private static Dictionary<string, TemplateProvider> CcdaTemplateProviderCache = new Dictionary<string, TemplateProvider>();
 
         public static void Convert(ConverterOptions options)
         {
@@ -144,10 +145,23 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Tool
             return dataType switch
             {
                 DataType.Hl7v2 => new TemplateProvider(templateDirectory, DataType.Hl7v2),
-                DataType.Ccda => new TemplateProvider(templateDirectory, DataType.Ccda),
+                DataType.Ccda => GetCcdaTemplateProvider(templateDirectory),
                 DataType.Json => new TemplateProvider(templateDirectory, DataType.Json),
                 _ => throw new NotImplementedException($"The conversion from data type {dataType} to FHIR is not supported")
             };
+        }
+
+        private static TemplateProvider GetCcdaTemplateProvider(string templateDirectory)
+        {
+            if (CcdaTemplateProviderCache.ContainsKey(templateDirectory))
+            {
+                return CcdaTemplateProviderCache[templateDirectory];
+            }
+
+            // Create a new TemplateProvider and insert into the cache
+            var ccdaTP = new TemplateProvider(templateDirectory, DataType.Ccda);
+            CcdaTemplateProviderCache[templateDirectory] = ccdaTP;
+            return ccdaTP;
         }
 
         private static TraceInfo CreateTraceInfo(DataType dataType, bool isTraceInfo)
