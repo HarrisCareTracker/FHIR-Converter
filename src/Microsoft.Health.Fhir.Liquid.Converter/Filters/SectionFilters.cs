@@ -67,11 +67,12 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
             return result;
         }
 
-        public static IDictionary<string, object> GetFirstCcdaSectionsByTemplateId(Hash data, string templateIdContent)
+        public static IDictionary<string, object> GetFirstCcdaSectionsByTemplateId(Dictionary<string, object> data, string templateIdContent)
         {
+            var hash = FromDictionary(data);
             var result = new Dictionary<string, object>();
             var templateIds = templateIdContent.Split("|", StringSplitOptions.RemoveEmptyEntries);
-            var components = GetComponents(data);
+            var components = GetComponents(hash);
 
             if (components == null)
             {
@@ -116,6 +117,28 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
         private static string NormalizeSectionName(string input)
         {
             return NormalizeSectionNameRegex.Replace(input, "_");
+        }
+
+        private static Hash FromDictionary(IDictionary<string, object> dictionary)
+        {
+            Hash result = new Hash();
+
+            foreach (var keyValue in dictionary)
+            {
+                if (keyValue.Value is IDictionary<string, object>)
+                {
+                    result.Add(keyValue.Key, FromDictionary((IDictionary<string, object>)keyValue.Value));
+                }
+                else
+                {
+                    result.Add(keyValue);
+                }
+            }
+
+            return result;
+            var hash = new Hash();
+            hash.Merge(dictionary);
+            return hash;
         }
     }
 }

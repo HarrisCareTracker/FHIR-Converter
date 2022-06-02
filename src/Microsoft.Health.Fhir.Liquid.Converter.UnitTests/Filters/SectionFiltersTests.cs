@@ -67,19 +67,19 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.UnitTests.FilterTests
             const string templateIdContent = "2.16.840.1.113883.10.20.22.2.6.1";
 
             // Empty data
-            Assert.Empty(Filters.GetFirstCcdaSectionsByTemplateId(new Hash(), templateIdContent));
+            Assert.Empty(Filters.GetFirstCcdaSectionsByTemplateId(new Dictionary<string, object>(), templateIdContent));
 
             // Empty template id content
-            Assert.Empty(Filters.GetFirstCcdaSectionsByTemplateId(Hash.FromDictionary(TestData), string.Empty));
+            Assert.Empty(Filters.GetFirstCcdaSectionsByTemplateId(TestData, string.Empty));
 
             // Valid data and template id content
-            var sections = Filters.GetFirstCcdaSectionsByTemplateId(Hash.FromDictionary(TestData), templateIdContent);
+            var sections = Filters.GetFirstCcdaSectionsByTemplateId(TestData, templateIdContent);
             Assert.Single(sections);
             Assert.Equal(5, ((Dictionary<string, object>)sections["2_16_840_1_113883_10_20_22_2_6_1"]).Count);
 
             // Null data or template id content
             Assert.Throws<NullReferenceException>(() => Filters.GetFirstCcdaSectionsByTemplateId(null, templateIdContent));
-            Assert.Throws<NullReferenceException>(() => Filters.GetFirstCcdaSectionsByTemplateId(new Hash(), null));
+            Assert.Throws<NullReferenceException>(() => Filters.GetFirstCcdaSectionsByTemplateId(new Dictionary<string, object>(), null));
         }
 
         private static Dictionary<string, object> LoadTestData()
