@@ -110,16 +110,23 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
         // Used to parse HTML blurbs from a CCDA and return first element with the supplied ID
         public static string GetElementValueById(string data, string id)
         {
-            if (id.StartsWith("#"))
+            if (id != null)
             {
-                id = id[1..];
-            }
+                if (id.StartsWith("#"))
+                {
+                    id = id[1..];
+                }
 
-            var jo = JObject.Parse(data);
-            var value = jo.Descendants().OfType<JProperty>().Where(p => p.Name == "ID").Where(p => (string)p.Value == id)
-                .Where(p => p.Next != null)
-                .Select(p => (p.Next as JProperty).Value.ToString()).FirstOrDefault();
-            return value;
+                var jo = JObject.Parse(data);
+                var value = jo.Descendants().OfType<JProperty>().Where(p => p.Name == "ID").Where(p => (string)p.Value == id)
+                    .Where(p => p.Next != null)
+                    .Select(p => (p.Next as JProperty).Value.ToString()).FirstOrDefault();
+                return value;
+            }
+            else
+            {
+                return "";
+            }
         }
     }
 }
