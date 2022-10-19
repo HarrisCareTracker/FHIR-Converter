@@ -58,6 +58,17 @@ namespace Microsoft.Health.Fhir.Liquid.Converter
             return regex.Match(data).Captures.Select(capture => capture.Value).ToList();
         }
 
+        public static List<string> Matches(string data, string regexString)
+        {
+            if (string.IsNullOrEmpty(data))
+            {
+                return new List<string>();
+            }
+
+            var regex = new Regex(regexString);
+            return regex.Matches(data).SelectMany(match => match.Captures).Select(capture => capture.Value).ToList();
+        }
+
         public static string ToJsonString(object data)
         {
             return data == null ? null : JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.None);
