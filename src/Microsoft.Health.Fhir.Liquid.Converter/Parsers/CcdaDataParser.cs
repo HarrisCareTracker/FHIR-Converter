@@ -26,6 +26,8 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Parsers
             try
             {
                 var xDocument = XDocument.Parse(document);
+                // Strip whitepsace from original data to lower memory footprint once GZIP'd
+                var originalData = xDocument.ToString(SaveOptions.DisableFormatting);
 
                 // Remove redundant namespaces to avoid appending namespace prefix before elements
                 var defaultNamespace = xDocument.Root?.GetDefaultNamespace().NamespaceName;
@@ -47,7 +49,7 @@ namespace Microsoft.Health.Fhir.Liquid.Converter.Parsers
                                      new Dictionary<string, object>();
 
                 // Remove line breaks in original data
-                dataDictionary["_originalData"] = Regex.Replace(document, @"\r\n?|\n", string.Empty);
+                dataDictionary["_originalData"] = Regex.Replace(originalData, @"\r\n?|\n", string.Empty);
 
                 return dataDictionary;
             }
